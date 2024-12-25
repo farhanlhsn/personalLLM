@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal LLM Chat</title>
+    <!-- Tambahkan Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tambahkan Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2a0845 0%, #6441A5 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-y: auto;
+        }
+        /* Bubble Animation yang Lebih Menarik */
+        @keyframes float-bubble {
+            0% { 
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 0.7;
+            }
+            25% {
+                transform: translate(15px, -15px) scale(1.1) rotate(45deg);
+                opacity: 0.9;
+            }
+            50% { 
+                transform: translate(30px, -30px) scale(1) rotate(90deg);
+                opacity: 0.7;
+            }
+            75% {
+                transform: translate(15px, -15px) scale(0.9) rotate(45deg);
+                opacity: 0.9;
+            }
+            100% { 
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 0.7;
+            }
+        }
+
+        .bubble {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(147, 112, 219, 0.2));
+            box-shadow: 0 0 20px rgba(147, 112, 219, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: -1;
+            animation: float-bubble 8s ease-in-out infinite;
+        }
+
+        .bubble:nth-child(1) {
+            width: 150px;
+            height: 150px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(255, 105, 180, 0.2));
+        }
+
+        .bubble:nth-child(2) {
+            width: 100px;
+            height: 100px;
+            top: 20%;
+            right: 15%;
+            animation-delay: -2s;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(147, 112, 219, 0.2));
+        }
+
+        .bubble:nth-child(3) {
+            width: 80px;
+            height: 80px;
+            bottom: 15%;
+            left: 20%;
+            animation-delay: -4s;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(64, 224, 208, 0.2));
+        }
+
+        .bubble:nth-child(4) {
+            width: 120px;
+            height: 120px;
+            bottom: 25%;
+            right: 25%;
+            animation-delay: -1s;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(255, 182, 193, 0.2));
+        }
+
+        .bubble:nth-child(5) {
+            width: 90px;
+            height: 90px;
+            top: 40%;
+            left: 30%;
+            animation-delay: -3s;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(123, 104, 238, 0.2));
+        }
+
+        /* Glassmorphism Background dengan Warna Baru */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15), transparent);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .chat-container {
+            width: 95%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            position: relative;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Robot dengan Warna Baru */
+        .robot {
+            position: absolute;
+            top: -60px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%239370DB"/><circle cx="35" cy="40" r="10" fill="white"/><circle cx="65" cy="40" r="10" fill="white"/><path d="M30 65 Q50 80 70 65" stroke="white" fill="none" stroke-width="5"/></svg>') no-repeat center;
+            animation: float 3s ease-in-out infinite;
+            z-index: 1000;
+        }
+
+        .robot::before {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 20px;
+            background: #6441A5;
+            border-radius: 0 0 15px 15px;
+            bottom: -10px;
+            left: 25px;
+        }
+
+        .antenna {
+            position: absolute;
+            top: -25px;
+            left: 35px;
+            width: 10px;
+            height: 25px;
+            background: linear-gradient(to top, #6441A5, #9370DB);
+            border-radius: 5px;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        .antenna::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -2px;
+            width: 14px;
+            height: 14px;
+            background: #9370DB;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #9370DB;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px #9370DB; }
+            50% { opacity: 0.5; box-shadow: 0 0 20px #9370DB; }
+        }
+        
+        #chat-messages {
+            flex: 1;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(147, 112, 219, 0.5) rgba(42, 43, 61, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+        
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-track {
+            background: rgba(42, 43, 61, 0.3);
+            border-radius: 4px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(147, 112, 219, 0.5);
+            border-radius: 4px;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 90%;
+            animation: fadeIn 0.3s ease-in;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            font-size: 16px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: rgba(100, 65, 165, 0.8);
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            background: rgba(147, 112, 219, 0.8);
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .bot-message::before {
+            content: '';
+            position: absolute;
+            left: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%239370DB"/><circle cx="35" cy="40" r="10" fill="white"/><circle cx="65" cy="40" r="10" fill="white"/><path d="M30 65 Q50 80 70 65" stroke="white" fill="none" stroke-width="5"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: botWave 2s infinite;
+        }
+
+        @keyframes botWave {
+            0%, 100% { transform: translateY(-50%) rotate(0deg); }
+            50% { transform: translateY(-50%) rotate(20deg); }
+        }
+        
+        #input-container {
+            margin-top: 20px;
+        }
+        
+        #user-input {
+            background: rgba(64, 65, 79, 0.3);
+            color: white;
+            border: 2px solid rgba(147, 112, 219, 0.5);
+            font-size: 16px;
+            padding: 12px;
+        }
+        
+        #user-input:focus {
+            background: rgba(64, 65, 79, 0.4);
+            color: white;
+            border-color: #9370DB;
+            box-shadow: 0 0 10px rgba(147, 112, 219, 0.3);
+        }
+        
+        #send-button {
+            background: linear-gradient(135deg, rgba(147, 112, 219, 0.8) 0%, rgba(100, 65, 165, 0.8) 100%);
+            border: none;
+            backdrop-filter: blur(10px);
+            font-size: 16px;
+            padding: 12px 24px;
+        }
+        
+        #send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(147, 112, 219, 0.4);
+        }
+        
+        #send-button:active {
+            transform: translateY(0);
+        }
+
+        #clear-button {
+            background: linear-gradient(135deg, rgba(255, 105, 180, 0.8) 0%, rgba(219, 112, 147, 0.8) 100%);
+            border: none;
+            backdrop-filter: blur(10px);
+            font-size: 16px;
+            padding: 12px 24px;
+        }
+
+        #clear-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(147, 112, 219, 0.5);
+            animation: fadeIn 1s ease-in;
+            margin-top: 20px;
+        }
+
+        .welcome-subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            animation: fadeIn 1.5s ease-in;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 98%;
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .message {
+                max-width: 95%;
+                font-size: 15px;
+            }
+
+            .welcome-message {
+                font-size: 24px;
+            }
+
+            .welcome-subtitle {
+                font-size: 16px;
+            }
+
+            #user-input, #send-button, #clear-button {
+                font-size: 15px;
+                padding: 10px;
+            }
+
+            .robot {
+                right: 20px;
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tambahkan div bubble di sini -->
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    
+    <div class="chat-container">
+        <div class="welcome-message h3 text-center mb-4">Halo!</div>
+        <div class="welcome-subtitle text-center mb-4">Mari mulai percakapan yang menyenangkan dan bermanfaat bersama saya 😊</div>
+        <div class="robot">
+            <div class="antenna"></div>
+        </div>
+        <div id="chat-messages" class="flex-grow-1 overflow-auto px-3"></div>
+        <div id="input-container" class="input-group">
+            <input type="text" id="user-input" class="form-control" autocomplete="off">
+            <button id="send-button" class="btn btn-primary">
+                <i class="bi bi-send-fill me-2"></i>Kirim
+            </button>
+        </div>
+        <button id="clear-button" class="btn btn-danger mt-3">
+            <i class="bi bi-trash-fill me-2"></i>Hapus Riwayat
+        </button>
+    </div>
+
+    <!-- Tambahkan Bootstrap JS dan Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const clearButton = document.getElementById('clear-button');
+    
+        // Ambil riwayat chat dari localStorage atau gunakan array kosong jika belum ada
+        let conversationHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+    
+        // Tampilkan riwayat chat yang tersimpan saat halaman dimuat
+        function loadChatHistory() {
+            if (conversationHistory.length > 0) {
+                conversationHistory.forEach(msg => {
+                    if (msg.role === 'user' || msg.role === 'assistant') {
+                        appendMessage(msg.role, msg.content);
+                    }
+                });
+            }
+        }
+    
+        function clearHistory() {
+            chatMessages.innerHTML = '';
+            conversationHistory = [];
+            // Hapus riwayat dari localStorage
+            localStorage.removeItem('chatHistory');
+        }
+    
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+    
+            appendMessage('user', message);
+            userInput.value = '';
+    
+            conversationHistory.push({ role: "user", content: message });
+            // Simpan ke localStorage setiap kali ada pesan baru
+            localStorage.setItem('chatHistory', JSON.stringify(conversationHistory));
+    
+            try {
+                const response = await fetch('http://127.0.0.1:4040/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: conversationHistory })
+                });
+    
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+    
+                const data = await response.json();
+                const botResponse = data.choices[0].message.content;
+    
+                conversationHistory.push({ role: "assistant", content: botResponse });
+                // Simpan ke localStorage setelah mendapat respons dari bot
+                localStorage.setItem('chatHistory', JSON.stringify(conversationHistory));
+                
+                appendMessage('bot', botResponse);
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('bot', 'Error: Tidak dapat terhubung ke server.');
+            }
+        }
+    
+        function appendMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedContent = formattedContent.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+            formattedContent = formattedContent.replace(/\n/g, '<br>');
+            messageDiv.innerHTML = formattedContent;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    
+        // Panggil loadChatHistory saat halaman dimuat
+        loadChatHistory();
+    
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    
+        sendButton.addEventListener('click', sendMessage);
+        clearButton.addEventListener('click', clearHistory);
+    </script>
+</body>
+</html>
